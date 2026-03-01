@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日瑜伽打卡</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .current-date {
+            color: #667eea;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            padding: 10px;
+            background: #f5f7ff;
+            border-radius: 10px;
+        }
+        
+        .check-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .check-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.6);
+        }
+        
+        .check-btn:active {
+            transform: translateY(0);
+        }
+        
+        .check-btn.checked {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            box-shadow: 0 10px 20px rgba(72, 187, 120, 0.4);
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .stat-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            flex: 1;
+            margin: 0 5px;
+            min-width: 120px;
+        }
+        
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            display: block;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        .history {
+            margin-top: 30px;
+            text-align: left;
+        }
+        
+        .history h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid #e9ecef;
+            color: #555;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .checked-mark {
+            color: #48bb78;
+            margin-right: 8px;
+            font-weight: bold;
+        }
+        
+        .streak {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .stats {
+                flex-direction: column;
+            }
+            
+            .stat-box {
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧘‍♀️ 每日瑜伽打卡</h1>
+        <p class="subtitle">坚持每日练习，成就更好的自己</p>
+        
+        <div class="current-date" id="currentDate">
+            加载中...
+        </div>
+        
+        <button class="check-btn" id="checkButton">
+            点击打卡
+        </button>
+        
+        <div class="stats">
+            <div class="stat-box">
+                <span class="stat-number" id="streakDays">0</span>
+                <span class="stat-label">连续打卡</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-number" id="totalDays">0</span>
+                <span class="stat-label">累计打卡</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-number" id="completionRate">0%</span>
+                <span class="stat-label">本月完成率</span>
+            </div>
+        </div>
+        
+        <div class="history">
+            <h3>📅 打卡历史</h3>
+            <div class="history-list" id="historyList">
+                <!-- 历史记录会动态添加到这里 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化数据存储（使用localStorage）
+        let yogaData = JSON.parse(localStorage.getItem('yogaData')) || {
+            streak: 0,
+            total: 0,
+            history: [],
+            lastCheckDate: null
+        };
+        
+        // 获取DOM元素
+        const currentDateEl = document.getElementById('currentDate');
+        const checkButton = document.getElementById('checkButton');
+        const streakDaysEl = document.getElementById('streakDays');
+        const totalDaysEl = document.getElementById('totalDays');
+        const completionRateEl = document.getElementById('completionRate');
+        const historyListEl = document.getElementById('historyList');
+        
+        // 更新当前日期显示
+        function updateCurrentDate() {
+            const now = new Date();
+            const options = { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                weekday: 'long'
+            };
+            currentDateEl.textContent = now.toLocaleDateString('zh-CN', options);
+            
+            // 检查今天是否已经打卡
+            const todayStr = now.toISOString().split('T')[0];
+            if (yogaData.history.includes(todayStr)) {
+                checkButton.textContent = '✅ 今日已打卡';
+                checkButton.classList.add('checked');
+                checkButton.disabled = true;
+            } else {
+                checkButton.textContent = '点击打卡';
+                checkButton.classList.remove('checked');
+                checkButton.disabled = false;
+            }
+        }
+        
+        // 更新统计数据
+        function updateStats() {
+            streakDaysEl.textContent = yogaData.streak;
+            totalDaysEl.textContent = yogaData.total;
+            
+            // 计算本月完成率
+            const now = new Date();
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            const currentDay = now.getDate();
+            
+            // 统计本月打卡次数
+            const monthStr = now.toISOString().slice(0, 7); // YYYY-MM
+            const monthHistory = yogaData.history.filter(date => date.startsWith(monthStr));
+            const rate = Math.round((monthHistory.length / currentDay) * 100);
+            
+            completionRateEl.textContent = rate + '%';
+        }
+        
+        // 更新历史记录
+        function updateHistory() {
+            historyListEl.innerHTML = '';
+            
+            // 显示最近30天的历史
+            const recentHistory = yogaData.history.slice(-30).reverse();
+            
+            if (recentHistory.length === 0) {
+                historyListEl.innerHTML = '<div class="history-item">暂无打卡记录</div>';
+                return;
+            }
+            
+            recentHistory.forEach(dateStr => {
+                const date = new Date(dateStr + 'T00:00:00');
+                const formattedDate = date.toLocaleDateString('zh-CN', { 
+                    month: 'long', 
+                    day: 'numeric',
+                    weekday: 'short'
+                });
+                
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.innerHTML = `
+                    <span class="checked-mark">✓</span>
+                    ${formattedDate}
+                `;
+                historyListEl.appendChild(item);
+            });
+        }
+        
+        // 打卡功能
+        function checkIn() {
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            
+            // 如果今天已经打卡，直接返回
+            if (yogaData.history.includes(todayStr)) {
+                alert('今天已经打卡过了！');
+                return;
+            }
+            
+            // 检查是否是连续打卡
+            const yesterday = new Date(now);
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            
+            if (yogaData.history.includes(yesterdayStr) || yogaData.history.length === 0) {
+                yogaData.streak += 1;
+            } else {
+                yogaData.streak = 1;
+            }
+            
+            // 更新数据
+            yogaData.total += 1;
+            yogaData.history.push(todayStr);
+            yogaData.lastCheckDate = todayStr;
+            
+            // 保存到localStorage
+            localStorage.setItem('yogaData', JSON.stringify(yogaData));
+            
+            // 更新UI
+            updateCurrentDate();
+            updateStats();
+            updateHistory();
+            
+            // 显示成功动画
+            checkButton.textContent = '✅ 打卡成功！';
+            checkButton.classList.add('checked');
+            checkButton.disabled = true;
+            
+            // 显示鼓励信息
+            const messages = [
+                "太棒了！坚持就是胜利！",
+                "了不起！又完成了一次瑜伽练习！",
+                "继续加油！你的身体会感谢你的！",
+                "完美！享受瑜伽带来的宁静吧！"
+            ];
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            
+            setTimeout(() => {
+                alert(randomMessage);
+            }, 300);
+        }
+        
+        // 初始化
+        function init() {
+            updateCurrentDate();
+            updateStats();
+            updateHistory();
+            
+            // 绑定打卡按钮事件
+            checkButton.addEventListener('click', checkIn);
+            
+            // 检查是否已经是今天打卡
+            updateCurrentDate();
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
