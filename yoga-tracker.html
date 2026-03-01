@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>每日瑜伽打卡</title>
+    <title>每日瑜伽打卡 - 积分版</title>
     <style>
         * {
             margin: 0;
@@ -26,7 +26,7 @@
             border-radius: 20px;
             padding: 30px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 500px;
+            max-width: 600px;
             width: 100%;
             text-align: center;
         }
@@ -81,10 +81,17 @@
             box-shadow: 0 10px 20px rgba(72, 187, 120, 0.4);
         }
         
-        .stats {
+        .stats-row {
             display: flex;
             justify-content: space-around;
             margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .stats-row-2 {
+            display: flex;
+            justify-content: space-around;
+            margin: 15px 0;
             flex-wrap: wrap;
         }
         
@@ -97,6 +104,11 @@
             min-width: 120px;
         }
         
+        .stat-box.points {
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            color: #333;
+        }
+        
         .stat-number {
             font-size: 32px;
             font-weight: bold;
@@ -104,10 +116,38 @@
             display: block;
         }
         
+        .stat-number.points {
+            color: #ff6b00;
+        }
+        
         .stat-label {
             color: #666;
             font-size: 14px;
             margin-top: 5px;
+        }
+        
+        .stat-label.points {
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        
+        .badge.add {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .badge.subtract {
+            background: #f56565;
+            color: white;
         }
         
         .history {
@@ -133,10 +173,22 @@
             padding: 10px;
             border-bottom: 1px solid #e9ecef;
             color: #555;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
         .history-item:last-child {
             border-bottom: none;
+        }
+        
+        .history-date {
+            flex: 1;
+        }
+        
+        .history-points {
+            font-weight: bold;
+            color: #ff6b00;
         }
         
         .checked-mark {
@@ -150,12 +202,35 @@
             font-weight: bold;
         }
         
+        .rules {
+            background: #e9f7ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+            font-size: 14px;
+        }
+        
+        .rules h4 {
+            color: #3182ce;
+            margin-bottom: 8px;
+        }
+        
+        .rules ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .rules li {
+            margin-bottom: 5px;
+        }
+        
         @media (max-width: 600px) {
             .container {
                 padding: 20px;
             }
             
-            .stats {
+            .stats-row, .stats-row-2 {
                 flex-direction: column;
             }
             
@@ -168,7 +243,7 @@
 <body>
     <div class="container">
         <h1>🧘‍♀️ 每日瑜伽打卡</h1>
-        <p class="subtitle">坚持每日练习，成就更好的自己</p>
+        <p class="subtitle">积分系统：坚持奖励，漏打扣分</p>
         
         <div class="current-date" id="currentDate">
             加载中...
@@ -178,7 +253,16 @@
             点击打卡
         </button>
         
-        <div class="stats">
+        <div class="rules">
+            <h4>📋 积分规则：</h4>
+            <ul>
+                <li><span class="badge add">+3分</span> 连续打卡3天奖励积分</li>
+                <li><span class="badge subtract">-2分</span> 连续2天不打卡扣除积分</li>
+                <li>每日首次打卡获得1基础分</li>
+            </ul>
+        </div>
+        
+        <div class="stats-row">
             <div class="stat-box">
                 <span class="stat-number" id="streakDays">0</span>
                 <span class="stat-label">连续打卡</span>
@@ -187,6 +271,17 @@
                 <span class="stat-number" id="totalDays">0</span>
                 <span class="stat-label">累计打卡</span>
             </div>
+            <div class="stat-box points">
+                <span class="stat-number points" id="totalPoints">0</span>
+                <span class="stat-label points">总积分</span>
+            </div>
+        </div>
+        
+        <div class="stats-row-2">
+            <div class="stat-box">
+                <span class="stat-number" id="todayPoints">0</span>
+                <span class="stat-label">今日积分</span>
+            </div>
             <div class="stat-box">
                 <span class="stat-number" id="completionRate">0%</span>
                 <span class="stat-label">本月完成率</span>
@@ -194,7 +289,7 @@
         </div>
         
         <div class="history">
-            <h3>📅 打卡历史</h3>
+            <h3>📅 打卡历史与积分变化</h3>
             <div class="history-list" id="historyList">
                 <!-- 历史记录会动态添加到这里 -->
             </div>
@@ -206,8 +301,11 @@
         let yogaData = JSON.parse(localStorage.getItem('yogaData')) || {
             streak: 0,
             total: 0,
+            points: 0,
             history: [],
-            lastCheckDate: null
+            pointsHistory: [],
+            lastCheckDate: null,
+            missedDays: 0
         };
         
         // 获取DOM元素
@@ -215,6 +313,8 @@
         const checkButton = document.getElementById('checkButton');
         const streakDaysEl = document.getElementById('streakDays');
         const totalDaysEl = document.getElementById('totalDays');
+        const totalPointsEl = document.getElementById('totalPoints');
+        const todayPointsEl = document.getElementById('todayPoints');
         const completionRateEl = document.getElementById('completionRate');
         const historyListEl = document.getElementById('historyList');
         
@@ -242,10 +342,65 @@
             }
         }
         
+        // 检查是否需要扣分（连续2天不打卡）
+        function checkMissedDays() {
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            
+            if (yogaData.history.length === 0) {
+                yogaData.missedDays = 0;
+                return;
+            }
+            
+            // 获取最后一次打卡日期
+            const lastCheck = new Date(yogaData.history[yogaData.history.length - 1] + 'T00:00:00');
+            const daysDiff = Math.floor((now - lastCheck) / (1000 * 60 * 60 * 24));
+            
+            if (daysDiff > 1) {
+                // 连续多天未打卡
+                yogaData.missedDays += daysDiff - 1;
+                
+                // 每连续2天未打卡扣2分
+                const deductionCycles = Math.floor(yogaData.missedDays / 2);
+                if (deductionCycles > 0) {
+                    const deduction = deductionCycles * 2; // 每次扣2分
+                    yogaData.points = Math.max(0, yogaData.points - deduction);
+                    yogaData.missedDays %= 2;
+                    
+                    // 记录扣分
+                    for (let i = 0; i < deductionCycles; i++) {
+                        const missDate = new Date(lastCheck);
+                        missDate.setDate(lastCheck.getDate() + (i + 1) * 2);
+                        const missDateStr = missDate.toISOString().split('T')[0];
+                        yogaData.pointsHistory.push({
+                            date: missDateStr,
+                            points: -2,
+                            reason: "连续2天未打卡"
+                        });
+                    }
+                    
+                    // 显示扣分提醒
+                    if (deduction > 0) {
+                        console.log(`扣分提醒：连续未打卡，扣除${deduction}分`);
+                    }
+                }
+            } else {
+                yogaData.missedDays = 0;
+            }
+        }
+        
         // 更新统计数据
         function updateStats() {
             streakDaysEl.textContent = yogaData.streak;
             totalDaysEl.textContent = yogaData.total;
+            totalPointsEl.textContent = yogaData.points;
+            
+            // 计算今天获得的积分
+            const todayStr = new Date().toISOString().split('T')[0];
+            const todayPoints = yogaData.pointsHistory
+                .filter(item => item.date === todayStr)
+                .reduce((sum, item) => sum + item.points, 0);
+            todayPointsEl.textContent = todayPoints;
             
             // 计算本月完成率
             const now = new Date();
@@ -264,16 +419,64 @@
         function updateHistory() {
             historyListEl.innerHTML = '';
             
-            // 显示最近30天的历史
-            const recentHistory = yogaData.history.slice(-30).reverse();
+            // 合并历史记录和积分记录
+            const allRecords = [];
             
-            if (recentHistory.length === 0) {
+            // 添加打卡记录
+            yogaData.history.forEach(dateStr => {
+                allRecords.push({
+                    date: dateStr,
+                    type: 'check',
+                    points: 0
+                });
+            });
+            
+            // 添加积分记录
+            yogaData.pointsHistory.forEach(item => {
+                allRecords.push({
+                    date: item.date,
+                    type: 'points',
+                    points: item.points,
+                    reason: item.reason
+                });
+            });
+            
+            // 按日期排序（最新的在前）
+            allRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            // 显示最近30天的记录
+            const recentRecords = allRecords.slice(0, 30);
+            
+            if (recentRecords.length === 0) {
                 historyListEl.innerHTML = '<div class="history-item">暂无打卡记录</div>';
                 return;
             }
             
-            recentHistory.forEach(dateStr => {
-                const date = new Date(dateStr + 'T00:00:00');
+            // 分组显示：同一天的数据合并
+            const groupedByDate = {};
+            recentRecords.forEach(record => {
+                if (!groupedByDate[record.date]) {
+                    groupedByDate[record.date] = {
+                        date: record.date,
+                        checks: 0,
+                        points: 0,
+                        reasons: []
+                    };
+                }
+                
+                if (record.type === 'check') {
+                    groupedByDate[record.date].checks += 1;
+                } else {
+                    groupedByDate[record.date].points += record.points;
+                    if (record.reason) {
+                        groupedByDate[record.date].reasons.push(record.reason);
+                    }
+                }
+            });
+            
+            // 显示分组后的记录
+            Object.values(groupedByDate).forEach(group => {
+                const date = new Date(group.date + 'T00:00:00');
                 const formattedDate = date.toLocaleDateString('zh-CN', { 
                     month: 'long', 
                     day: 'numeric',
@@ -282,10 +485,23 @@
                 
                 const item = document.createElement('div');
                 item.className = 'history-item';
-                item.innerHTML = `
-                    <span class="checked-mark">✓</span>
-                    ${formattedDate}
-                `;
+                
+                let content = `<div class="history-date">
+                    <span class="checked-mark">${group.checks > 0 ? '✓' : ''}</span>
+                    ${formattedDate}`;
+                
+                if (group.reasons.length > 0) {
+                    content += `<div style="font-size: 12px; color: #888;">${group.reasons[0]}</div>`;
+                }
+                
+                content += `</div>`;
+                
+                if (group.points !== 0) {
+                    const pointsClass = group.points > 0 ? 'badge add' : 'badge subtract';
+                    content += `<div class="history-points"><span class="${pointsClass}">${group.points > 0 ? '+' : ''}${group.points}分</span></div>`;
+                }
+                
+                item.innerHTML = content;
                 historyListEl.appendChild(item);
             });
         }
@@ -301,21 +517,45 @@
                 return;
             }
             
+            // 检查是否需要扣分
+            checkMissedDays();
+            
             // 检查是否是连续打卡
             const yesterday = new Date(now);
             yesterday.setDate(yesterday.getDate() - 1);
             const yesterdayStr = yesterday.toISOString().split('T')[0];
             
+            let todayPoints = 1; // 基础分1分
+            
             if (yogaData.history.includes(yesterdayStr) || yogaData.history.length === 0) {
                 yogaData.streak += 1;
+                
+                // 连续打卡3天奖励3分
+                if (yogaData.streak % 3 === 0) {
+                    todayPoints += 3;
+                    yogaData.pointsHistory.push({
+                        date: todayStr,
+                        points: 3,
+                        reason: "连续打卡3天奖励"
+                    });
+                }
             } else {
                 yogaData.streak = 1;
             }
             
+            // 记录基础分
+            yogaData.pointsHistory.push({
+                date: todayStr,
+                points: 1,
+                reason: "每日打卡"
+            });
+            
             // 更新数据
             yogaData.total += 1;
             yogaData.history.push(todayStr);
+            yogaData.points += todayPoints;
             yogaData.lastCheckDate = todayStr;
+            yogaData.missedDays = 0;
             
             // 保存到localStorage
             localStorage.setItem('yogaData', JSON.stringify(yogaData));
@@ -330,12 +570,17 @@
             checkButton.classList.add('checked');
             checkButton.disabled = true;
             
-            // 显示鼓励信息
+            // 显示积分获得信息
+            let pointsMessage = "获得1基础分";
+            if (todayPoints > 1) {
+                pointsMessage = `获得${todayPoints}分（1基础分 + 3连续奖励）`;
+            }
+            
             const messages = [
-                "太棒了！坚持就是胜利！",
-                "了不起！又完成了一次瑜伽练习！",
-                "继续加油！你的身体会感谢你的！",
-                "完美！享受瑜伽带来的宁静吧！"
+                `太棒了！坚持就是胜利！${pointsMessage}`,
+                `了不起！又完成了一次瑜伽练习！${pointsMessage}`,
+                `继续加油！你的身体会感谢你的！${pointsMessage}`,
+                `完美！享受瑜伽带来的宁静吧！${pointsMessage}`
             ];
             const randomMessage = messages[Math.floor(Math.random() * messages.length)];
             
@@ -346,6 +591,9 @@
         
         // 初始化
         function init() {
+            // 每次加载时检查是否需要扣分
+            checkMissedDays();
+            
             updateCurrentDate();
             updateStats();
             updateHistory();
@@ -355,6 +603,9 @@
             
             // 检查是否已经是今天打卡
             updateCurrentDate();
+            
+            // 保存可能更新的数据
+            localStorage.setItem('yogaData', JSON.stringify(yogaData));
         }
         
         // 页面加载完成后初始化
