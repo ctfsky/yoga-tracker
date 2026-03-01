@@ -47,10 +47,39 @@
             color: #667eea;
             font-size: 18px;
             font-weight: bold;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
             padding: 10px;
             background: #f5f7ff;
             border-radius: 10px;
+        }
+        
+        .quote-container {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .quote {
+            color: #2d3748;
+            font-size: 16px;
+            font-style: italic;
+            line-height: 1.5;
+            margin-bottom: 5px;
+        }
+        
+        .quote-author {
+            color: #718096;
+            font-size: 14px;
+            text-align: right;
+            margin-top: 5px;
+        }
+        
+        .quote-icon {
+            color: #667eea;
+            font-size: 20px;
+            margin-right: 8px;
         }
         
         .check-btn {
@@ -237,6 +266,10 @@
             .stat-box {
                 margin: 5px 0;
             }
+            
+            .quote {
+                font-size: 14px;
+            }
         }
     </style>
 </head>
@@ -247,6 +280,14 @@
         
         <div class="current-date" id="currentDate">
             加载中...
+        </div>
+        
+        <div class="quote-container" id="quoteContainer">
+            <div class="quote">
+                <span class="quote-icon">💭</span>
+                <span id="quoteText">加载励志名言...</span>
+            </div>
+            <div class="quote-author" id="quoteAuthor">- 加载中 -</div>
         </div>
         
         <button class="check-btn" id="checkButton">
@@ -297,6 +338,90 @@
     </div>
 
     <script>
+        // 励志名言库
+        const motivationalQuotes = [
+            {
+                text: "身体是灵魂的殿堂，瑜伽是每天的祈祷。",
+                author: "印度谚语"
+            },
+            {
+                text: "坚持不是一种选择，而是一种习惯。让瑜伽成为你每天的习惯。",
+                author: "瑜伽导师"
+            },
+            {
+                text: "今天的汗水，明天的优雅。每一次坚持都在塑造更好的自己。",
+                author: "自律格言"
+            },
+            {
+                text: "瑜伽不在于触摸脚趾，而在于你在过程中发现了什么。",
+                author: "B.K.S. Iyengar"
+            },
+            {
+                text: "呼吸是身心的桥梁，瑜伽是通往平静的道路。",
+                author: "瑜伽智慧"
+            },
+            {
+                text: "别等到明天，今天就是你最年轻的一天。",
+                author: "励志格言"
+            },
+            {
+                text: "瑜伽不是关于做到完美，而是关于感知自己的存在。",
+                author: "瑜伽哲学"
+            },
+            {
+                text: "每天进步1%，一年后你将进步37倍。",
+                author: "复合效应"
+            },
+            {
+                text: "坚持的力量不在于一朝一夕，而在于日复一日的积累。",
+                author: "成长法则"
+            },
+            {
+                text: "每一次深呼吸都在净化身心，每一个体式都在强化意志。",
+                author: "瑜伽修行"
+            },
+            {
+                text: "身体的变化需要时间，但心灵的平静就在当下。",
+                author: "正念智慧"
+            },
+            {
+                text: "你不必很厉害才开始，但你必须开始才会很厉害。",
+                author: "行动格言"
+            },
+            {
+                text: "瑜伽教会我们的不仅是身体的柔韧，更是心灵的坚韧。",
+                author: "瑜伽精神"
+            },
+            {
+                text: "今天不做，明天不会变得更容易，只会变得更难。",
+                author: "自律真理"
+            },
+            {
+                text: "专注当下，感受呼吸，让瑜伽带你回到真实的自己。",
+                author: "正念练习"
+            },
+            {
+                text: "优秀不是一种天赋，而是一种选择。选择坚持，选择成长。",
+                author: "成长思维"
+            },
+            {
+                text: "瑜伽是给自己的礼物，每天打开这个礼物，感受其中的美好。",
+                author: "自我关爱"
+            },
+            {
+                text: "每一次坚持都在向更好的自己靠近，每一滴汗水都有它的价值。",
+                author: "努力的意义"
+            },
+            {
+                text: "身体在呼吸中放松，心灵在静默中觉醒。",
+                author: "瑜伽体验"
+            },
+            {
+                text: "不必追求完美，只需保持前行。成长就在每一步中。",
+                author: "进步哲学"
+            }
+        ];
+        
         // 初始化数据存储（使用localStorage）
         let yogaData = JSON.parse(localStorage.getItem('yogaData')) || {
             streak: 0,
@@ -310,6 +435,8 @@
         
         // 获取DOM元素
         const currentDateEl = document.getElementById('currentDate');
+        const quoteTextEl = document.getElementById('quoteText');
+        const quoteAuthorEl = document.getElementById('quoteAuthor');
         const checkButton = document.getElementById('checkButton');
         const streakDaysEl = document.getElementById('streakDays');
         const totalDaysEl = document.getElementById('totalDays');
@@ -317,6 +444,30 @@
         const todayPointsEl = document.getElementById('todayPoints');
         const completionRateEl = document.getElementById('completionRate');
         const historyListEl = document.getElementById('historyList');
+        
+        // 获取每日随机励志名言
+        function getDailyQuote() {
+            // 使用日期作为种子，确保每天的名言相同
+            const today = new Date();
+            const dateStr = today.toISOString().slice(0, 10); // YYYY-MM-DD
+            
+            // 将日期转换为数字种子
+            let seed = 0;
+            for (let i = 0; i < dateStr.length; i++) {
+                seed += dateStr.charCodeAt(i);
+            }
+            
+            // 使用种子选择名言
+            const index = seed % motivationalQuotes.length;
+            return motivationalQuotes[index];
+        }
+        
+        // 显示励志名言
+        function displayQuote() {
+            const quote = getDailyQuote();
+            quoteTextEl.textContent = quote.text;
+            quoteAuthorEl.textContent = `- ${quote.author} -`;
+        }
         
         // 更新当前日期显示
         function updateCurrentDate() {
@@ -593,6 +744,9 @@
         function init() {
             // 每次加载时检查是否需要扣分
             checkMissedDays();
+            
+            // 显示励志名言
+            displayQuote();
             
             updateCurrentDate();
             updateStats();
