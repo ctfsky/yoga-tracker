@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日瑜伽打卡 - 增强版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        
+        .current-date {
+            color: #667eea;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f5f7ff;
+            border-radius: 10px;
+        }
+        
+        .quote-container {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .quote {
+            color: #2d3748;
+            font-size: 16px;
+            font-style: italic;
+            line-height: 1.5;
+            margin-bottom: 5px;
+        }
+        
+        .quote-author {
+            color: #718096;
+            font-size: 14px;
+            text-align: right;
+            margin-top: 5px;
+        }
+        
+        .quote-icon {
+            color: #667eea;
+            font-size: 20px;
+            margin-right: 8px;
+        }
+        
+        .check-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .check-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.6);
+        }
+        
+        .check-btn:active {
+            transform: translateY(0);
+        }
+        
+        .check-btn.checked {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            box-shadow: 0 10px 20px rgba(72, 187, 120, 0.4);
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .stat-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            flex: 1;
+            margin: 0 5px;
+            min-width: 120px;
+        }
+        
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            display: block;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        .history {
+            margin-top: 30px;
+            text-align: left;
+        }
+        
+        .history h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid #e9ecef;
+            color: #555;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .checked-mark {
+            color: #48bb78;
+            margin-right: 8px;
+            font-weight: bold;
+        }
+        
+        .debug-info {
+            font-size: 12px;
+            color: #888;
+            margin-top: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            text-align: left;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .stats {
+                flex-direction: column;
+            }
+            
+            .stat-box {
+                margin: 5px 0;
+            }
+            
+            .quote {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧘‍♀️ 每日瑜伽打卡</h1>
+        <p class="subtitle">增强版 - 每日励志名言</p>
+        
+        <div class="current-date" id="currentDate">
+            加载中...
+        </div>
+        
+        <div class="quote-container" id="quoteContainer">
+            <div class="quote">
+                <span class="quote-icon">💭</span>
+                <span id="quoteText">加载励志名言...</span>
+            </div>
+            <div class="quote-author" id="quoteAuthor">- 加载中 -</div>
+        </div>
+        
+        <button class="check-btn" id="checkButton">
+            点击打卡
+        </button>
+        
+        <div class="stats">
+            <div class="stat-box">
+                <span class="stat-number" id="streakDays">0</span>
+                <span class="stat-label">连续打卡</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-number" id="totalDays">0</span>
+                <span class="stat-label">累计打卡</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-number" id="totalPoints">0</span>
+                <span class="stat-label">总积分</span>
+            </div>
+        </div>
+        
+        <div class="history">
+            <h3>📅 打卡历史</h3>
+            <div class="history-list" id="historyList">
+                <!-- 历史记录会动态添加到这里 -->
+            </div>
+        </div>
+        
+        <div class="debug-info">
+            <strong>系统信息：</strong><br>
+            <span id="debugStatus">系统正常</span><br>
+            <button onclick="resetData()" style="margin-top: 5px; padding: 5px 10px; font-size: 12px;">重置数据</button>
+            <button onclick="showQuoteList()" style="margin-top: 5px; padding: 5px 10px; font-size: 12px;">查看名言库</button>
+        </div>
+    </div>
+
+    <script>
+        console.log('瑜伽打卡增强版启动...');
+        
+        // ==================== 励志名言库 ====================
+        const motivationalQuotes = [
+            {
+                text: "身体是灵魂的殿堂，瑜伽是每天的祈祷。",
+                author: "印度谚语"
+            },
+            {
+                text: "坚持不是一种选择，而是一种习惯。让瑜伽成为你每天的习惯。",
+                author: "瑜伽导师"
+            },
+            {
+                text: "今天的汗水，明天的优雅。每一次坚持都在塑造更好的自己。",
+                author: "自律格言"
+            },
+            {
+                text: "瑜伽不在于触摸脚趾，而在于你在过程中发现了什么。",
+                author: "B.K.S. Iyengar"
+            },
+            {
+                text: "呼吸是身心的桥梁，瑜伽是通往平静的道路。",
+                author: "瑜伽智慧"
+            },
+            {
+                text: "别等到明天，今天就是你最年轻的一天。",
+                author: "励志格言"
+            },
+            {
+                text: "瑜伽不是关于做到完美，而是关于感知自己的存在。",
+                author: "瑜伽哲学"
+            },
+            {
+                text: "每天进步1%，一年后你将进步37倍。",
+                author: "复合效应"
+            },
+            {
+                text: "坚持的力量不在于一朝一夕，而在于日复一日的积累。",
+                author: "成长法则"
+            },
+            {
+                text: "每一次深呼吸都在净化身心，每一个体式都在强化意志。",
+                author: "瑜伽修行"
+            },
+            {
+                text: "身体的变化需要时间，但心灵的平静就在当下。",
+                author: "正念智慧"
+            },
+            {
+                text: "你不必很厉害才开始，但你必须开始才会很厉害。",
+                author: "行动格言"
+            },
+            {
+                text: "瑜伽教会我们的不仅是身体的柔韧，更是心灵的坚韧。",
+                author: "瑜伽精神"
+            },
+            {
+                text: "今天不做，明天不会变得更容易，只会变得更难。",
+                author: "自律真理"
+            },
+            {
+                text: "专注当下，感受呼吸，让瑜伽带你回到真实的自己。",
+                author: "正念练习"
+            },
+            {
+                text: "优秀不是一种天赋，而是一种选择。选择坚持，选择成长。",
+                author: "成长思维"
+            },
+            {
+                text: "瑜伽是给自己的礼物，每天打开这个礼物，感受其中的美好。",
+                author: "自我关爱"
+            },
+            {
+                text: "每一次坚持都在向更好的自己靠近，每一滴汗水都有它的价值。",
+                author: "努力的意义"
+            },
+            {
+                text: "身体在呼吸中放松，心灵在静默中觉醒。",
+                author: "瑜伽体验"
+            },
+            {
+                text: "不必追求完美，只需保持前行。成长就在每一步中。",
+                author: "进步哲学"
+            }
+        ];
+        
+        // ==================== 核心数据 ====================
+        let yogaData = JSON.parse(localStorage.getItem('yogaData')) || {
+            streak: 0,
+            total: 0,
+            points: 0,
+            history: [],
+            lastCheckDate: null
+        };
+        
+        // ==================== DOM元素 ====================
+        const currentDateEl = document.getElementById('currentDate');
+        const quoteTextEl = document.getElementById('quoteText');
+        const quoteAuthorEl = document.getElementById('quoteAuthor');
+        const checkButton = document.getElementById('checkButton');
+        const streakDaysEl = document.getElementById('streakDays');
+        const totalDaysEl = document.getElementById('totalDays');
+        const totalPointsEl = document.getElementById('totalPoints');
+        const historyListEl = document.getElementById('historyList');
+        const debugStatusEl = document.getElementById('debugStatus');
+        
+        // ==================== 励志名言功能 ====================
+        function getDailyQuote() {
+            try {
+                // 使用日期作为种子，确保每天的名言相同
+                const today = new Date();
+                const dateStr = today.toISOString().slice(0, 10);
+                
+                // 将日期转换为数字种子
+                let seed = 0;
+                for (let i = 0; i < dateStr.length; i++) {
+                    seed += dateStr.charCodeAt(i);
+                }
+                
+                // 使用种子选择名言
+                const index = seed % motivationalQuotes.length;
+                return motivationalQuotes[index];
+            } catch (error) {
+                console.error('获取名言错误:', error);
+                return {
+                    text: "坚持就是胜利！",
+                    author: "小C"
+                };
+            }
+        }
+        
+        function displayQuote() {
+            try {
+                const quote = getDailyQuote();
+                quoteTextEl.textContent = quote.text;
+                quoteAuthorEl.textContent = `- ${quote.author} -`;
+                updateDebugStatus(`今日名言: "${quote.text.substring(0, 20)}..."`);
+            } catch (error) {
+                console.error('显示名言错误:', error);
+                quoteTextEl.textContent = "坚持每日瑜伽，成就更好的自己！";
+                quoteAuthorEl.textContent = "- 小C -";
+            }
+        }
+        
+        function showQuoteList() {
+            let message = "📚 励志名言库 (共" + motivationalQuotes.length + "条):\n\n";
+            motivationalQuotes.forEach((q, i) => {
+                message += `${i + 1}. ${q.text}\n   —— ${q.author}\n\n`;
+            });
+            alert(message.substring(0, 2000) + "...\n\n(显示前部分，完整库在代码中)");
+        }
+        
+        // ==================== 核心功能 ====================
+        function updateDebugStatus(message) {
+            debugStatusEl.textContent = message;
+            console.log('状态:', message);
+        }
+        
+        function updateCurrentDate() {
+            try {
+                const now = new Date();
+                const options = { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    weekday: 'long'
+                };
+                currentDateEl.textContent = now.toLocaleDateString('zh-CN', options);
+                
+                const todayStr = now.toISOString().split('T')[0];
+                if (yogaData.history.includes(todayStr)) {
+                    checkButton.textContent = '✅ 今日已打卡';
+                    checkButton.classList.add('checked');
+                    checkButton.disabled = true;
+                    updateDebugStatus('今天已打卡 ✓');
+                } else {
+                    checkButton.textContent = '点击打卡';
+                    checkButton.classList.remove('checked');
+                    checkButton.disabled = false;
+                    updateDebugStatus('等待打卡...');
+                }
+            } catch (error) {
+                updateDebugStatus('日期错误: ' + error.message);
+                console.error('日期更新错误:', error);
+            }
+        }
+        
+        function updateStats() {
+            try {
+                streakDaysEl.textContent = yogaData.streak;
+                totalDaysEl.textContent = yogaData.total;
+                totalPointsEl.textContent = yogaData.points;
+            } catch (error) {
+                updateDebugStatus('数据更新错误: ' + error.message);
+                console.error('数据更新错误:', error);
+            }
+        }
+        
+        function updateHistory() {
+            try {
+                historyListEl.innerHTML = '';
+                
+                if (yogaData.history.length === 0) {
+                    historyListEl.innerHTML = '<div class="history-item">暂无打卡记录</div>';
+                    return;
+                }
+                
+                const recentHistory = yogaData.history.slice(-10).reverse();
+                
+                recentHistory.forEach(dateStr => {
+                    const date = new Date(dateStr + 'T00:00:00');
+                    const formattedDate = date.toLocaleDateString('zh-CN', { 
+                        month: 'long', 
+                        day: 'numeric',
+                        weekday: 'short'
+                    });
+                    
+                    const item = document.createElement('div');
+                    item.className = 'history-item';
+                    item.innerHTML = `
+                        <span class="checked-mark">✓</span>
+                        ${formattedDate}
+                    `;
+                    historyListEl.appendChild(item);
+                });
+                
+                updateDebugStatus(`历史记录: ${recentHistory.length}条`);
+            } catch (error) {
+                updateDebugStatus('历史记录错误: ' + error.message);
+                console.error('历史记录错误:', error);
+            }
+        }
+        
+        function checkIn() {
+            updateDebugStatus('开始打卡...');
+            
+            try {
+                const now = new Date();
+                const todayStr = now.toISOString().split('T')[0];
+                
+                if (yogaData.history.includes(todayStr)) {
+                    updateDebugStatus('今天已经打卡过了');
+                    alert('今天已经打卡过了！');
+                    return;
+                }
+                
+                const yesterday = new Date(now);
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayStr = yesterday.toISOString().split('T')[0];
+                
+                let pointsEarned = 1; // 基础分
+                let bonusMessage = '';
+                
+                if (yogaData.history.includes(yesterdayStr) || yogaData.history.length === 0) {
+                    yogaData.streak += 1;
+                    
+                    if (yogaData.streak % 3 === 0) {
+                        pointsEarned += 3;
+                        bonusMessage = ' (连续3天奖励+3分!)';
+                        updateDebugStatus('连续3天奖励!');
+                    }
+                } else {
+                    yogaData.streak = 1;
+                    updateDebugStatus('重新开始连续计数');
+                }
+                
+                yogaData.total += 1;
+                yogaData.history.push(todayStr);
+                yogaData.points += pointsEarned;
+                yogaData.lastCheckDate = todayStr;
+                
+                localStorage.setItem('yogaData', JSON.stringify(yogaData));
+                
+                updateCurrentDate();
+                updateStats();
+                updateHistory();
+                
+                checkButton.textContent = '✅ 打卡成功！';
+                checkButton.classList.add('checked');
+                checkButton.disabled = true;
+                
+                updateDebugStatus('打卡成功!');
+                
+                setTimeout(() => {
+                    alert(`打卡成功！\n连续${yogaData.streak}天\n获得${pointsEarned}分${bonusMessage}\n总积分：${yogaData.points}`);
+                }, 300);
+                
+            } catch (error) {
+                updateDebugStatus('打卡错误: ' + error.message);
+                console.error('打卡错误:', error);
+                alert('打卡失败，请查看控制台错误信息');
+            }
+        }
+        
+        function resetData() {
+            if (confirm('确定要重置所有数据吗？历史记录和积分都将清零。')) {
+                localStorage.removeItem('yogaData');
+                yogaData = {
+                    streak: 0,
+                    total: 0,
+                    points: 0,
+                    history: [],
+                    lastCheckDate: null
+                };
+                updateCurrentDate();
+                updateStats();
+                updateHistory();
+                updateDebugStatus('数据已重置');
+                alert('数据已重置！可以重新开始打卡了。');
+            }
+        }
+        
+        function init() {
+            updateDebugStatus('系统初始化...');
+            
+            try {
+                displayQuote();
+                checkButton.addEventListener('click', checkIn);
+                updateCurrentDate();
+                updateStats();
+                updateHistory();
+                updateDebugStatus('系统就绪 ✓');
+                
+                console.log('系统状态:', {
+                    连续天数: yogaData.streak,
+                    总次数: yogaData.total,
+                    积分: yogaData.points,
+                    历史记录数: yogaData.history.length
+                });
+                
+            } catch (error) {
+                updateDebugStatus('初始化错误: ' + error.message);
+                console.error('初始化错误:', error);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', init);
+        if (document.readyState !== 'loading') {
+            init();
+        }
+        
+        console.log('瑜伽打卡增强版加载完成');
+    </script>
+</body>
+</html>
