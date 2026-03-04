@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>瑜伽打卡系统诊断</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; }
+        button { padding: 10px 20px; margin: 5px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🧘‍♀️ 瑜伽打卡系统诊断工具</h1>
+    
+    <div id="results">
+        <div class="test-result" id="test1">
+            <h3>1. 检查localStorage访问权限...</h3>
+        </div>
+        <div class="test-result" id="test2">
+            <h3>2. 检查现有数据...</h3>
+        </div>
+        <div class="test-result" id="test3">
+            <h3>3. 测试按钮点击事件...</h3>
+        </div>
+        <div class="test-result" id="test4">
+            <h3>4. 测试日期计算...</h3>
+        </div>
+    </div>
+    
+    <div>
+        <h3>操作测试</h3>
+        <button onclick="testLocalStorage()">测试localStorage</button>
+        <button onclick="clearData()">清除测试数据</button>
+        <button onclick="simulateCheckIn()">模拟打卡</button>
+    </div>
+    
+    <div id="dataDisplay" style="margin-top: 20px;">
+        <h3>当前数据：</h3>
+        <pre id="currentData">加载中...</pre>
+    </div>
+    
+    <script>
+        // 测试1：检查localStorage
+        function testLocalStorage() {
+            const test1 = document.getElementById('test1');
+            try {
+                localStorage.setItem('test_key', 'test_value');
+                const value = localStorage.getItem('test_key');
+                localStorage.removeItem('test_key');
+                
+                if (value === 'test_value') {
+                    test1.innerHTML = '<h3>✅ 1. localStorage访问正常</h3><p>浏览器本地存储功能正常。</p>';
+                    test1.className = 'test-result success';
+                } else {
+                    throw new Error('存储/读取不一致');
+                }
+            } catch (error) {
+                test1.innerHTML = `<h3>❌ 1. localStorage访问失败</h3><p>错误：${error.message}</p><p>可能是隐私设置阻止了localStorage。</p>`;
+                test1.className = 'test-result error';
+            }
+        }
+        
+        // 测试2：检查现有数据
+        function checkExistingData() {
+            const test2 = document.getElementById('test2');
+            try {
+                const yogaData = JSON.parse(localStorage.getItem('yogaData') || '{}');
+                const dataStr = JSON.stringify(yogaData, null, 2);
+                
+                document.getElementById('currentData').textContent = dataStr;
+                
+                if (Object.keys(yogaData).length === 0) {
+                    test2.innerHTML = '<h3>⚠️ 2. 无现有数据</h3><p>这是正常的，如果是第一次使用的话。</p>';
+                    test2.className = 'test-result warning';
+                } else {
+                    test2.innerHTML = `<h3>✅ 2. 发现现有数据</h3><p>数据大小：${dataStr.length} 字节</p>`;
+                    test2.className = 'test-result success';
+                }
+            } catch (error) {
+                test2.innerHTML = `<h3>❌ 2. 数据解析失败</h3><p>错误：${error.message}</p><p>数据可能已损坏。</p>`;
+                test2.className = 'test-result error';
+            }
+        }
+        
+        // 测试3：检查事件监听
+        function testEventListener() {
+            const test3 = document.getElementById('test3');
+            const testButton = document.createElement('button');
+            testButton.textContent = '测试按钮';
+            let clicked = false;
+            
+            testButton.addEventListener('click', () => {
+                clicked = true;
+            });
+            
+            // 模拟点击
+            testButton.click();
+            
+            setTimeout(() => {
+                if (clicked) {
+                    test3.innerHTML = '<h3>✅ 3. 按钮事件监听正常</h3><p>JavaScript事件系统工作正常。</p>';
+                    test3.className = 'test-result success';
+                } else {
+                    test3.innerHTML = '<h3>❌ 3. 按钮事件监听失败</h3><p>可能是JavaScript被阻止或有问题。</p>';
+                    test3.className = 'test-result error';
+                }
+            }, 100);
+        }
+        
+        // 测试4：检查日期计算
+        function testDateCalculation() {
+            const test4 = document.getElementById('test4');
+            try {
+                const now = new Date();
+                const todayStr = now.toISOString().split('T')[0];
+                const yesterday = new Date(now);
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayStr = yesterday.toISOString().split('T')[0];
+                
+                test4.innerHTML = `<h3>✅ 4. 日期计算正常</h3>
+                                  <p>今天：${todayStr}</p>
+                                  <p>昨天：${yesterdayStr}</p>
+                                  <p>日期格式化正常。</p>`;
+                test4.className = 'test-result success';
+            } catch (error) {
+                test4.innerHTML = `<h3>❌ 4. 日期计算失败</h3><p>错误：${error.message}</p>`;
+                test4.className = 'test-result error';
+            }
+        }
+        
+        // 清除数据
+        function clearData() {
+            localStorage.removeItem('yogaData');
+            checkExistingData();
+            alert('数据已清除！');
+        }
+        
+        // 模拟打卡
+        function simulateCheckIn() {
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            
+            let yogaData = JSON.parse(localStorage.getItem('yogaData') || '{}');
+            
+            if (!yogaData.history) yogaData.history = [];
+            if (!yogaData.points) yogaData.points = 0;
+            if (!yogaData.streak) yogaData.streak = 0;
+            if (!yogaData.total) yogaData.total = 0;
+            
+            if (yogaData.history.includes(todayStr)) {
+                alert('今天已经打过卡了！');
+                return;
+            }
+            
+            // 简单打卡逻辑
+            yogaData.history.push(todayStr);
+            yogaData.total += 1;
+            yogaData.points += 1;
+            yogaData.streak += 1;
+            
+            localStorage.setItem('yogaData', JSON.stringify(yogaData));
+            checkExistingData();
+            alert(`打卡成功！获得1积分。当前积分：${yogaData.points}`);
+        }
+        
+        // 页面加载时运行所有测试
+        window.onload = function() {
+            testLocalStorage();
+            checkExistingData();
+            testEventListener();
+            testDateCalculation();
+        };
+    </script>
+</body>
+</html>
